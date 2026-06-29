@@ -1,0 +1,14 @@
+version: '3'
+includes:
+  docker: tasks/Taskfile.docker.yaml
+  secret: tasks/Taskfile.secret.yaml
+tasks:
+  setup:
+    desc: Setup the repository
+    cmds:
+      - ./scripts/ci/setup.sh
+      - ./scripts/local/secrets.sh
+  lint:
+    desc: Lints the whole code-base
+    cmds:
+      - pre-commit run --all-files
