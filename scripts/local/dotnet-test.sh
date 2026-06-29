@@ -67,45 +67,24 @@ esac
   exit "${code}"
 }
 
-# Coverage mode: generate a runsettings from config, collect coverage, preserve the report,
-# then enforce the threshold — keeping the report even when the tests fail.
+# Coverage mode: collect coverage, preserve the report, then enforce the threshold.
 echo "🧪 Running ${KIND} tests with coverage (min ${COV_MIN}%)..."
-# Start from a clean RESULTS so the threshold can ONLY ever read THIS run's fresh report.
-# COV_OUT is nested under RESULTS, so a previously-preserved copy would otherwise be
-# re-discovered by the find below and silently re-evaluated as stale coverage (loop-1 bug).
 rm -rf "${RESULTS}"
 mkdir -p "${COV_OUT}"
-runsettings="$(mktemp "${TMPDIR:-/tmp}/coverage.XXXXXX.runsettings")"
-cat >"${runsettings}" <<EOF
-<?xml version="1.0" encoding="utf-8"?>
-<RunSettings>
-  <DataCollectionRunSettings>
-    <DataCollectors>
-      <DataCollector friendlyName="XPlat Code Coverage">
-        <Configuration>
-          <Format>${TEST_COVERAGE_FORMAT}</Format>
-          <Include>${COV_INC}</Include>
-          <Exclude>${COV_EXC}</Exclude>
-        </Configuration>
-      </DataCollector>
-    </DataCollectors>
-  </DataCollectionRunSettings>
-</RunSettings>
-EOF
 
 set +e
 dotnet test "${PROJECT}" -c Release \
   --logger "trx;LogFileName=${KIND}.trx" \
   --results-directory "${RESULTS}" \
-  --settings "${runsettings}"
+  --collect:"XPlat Code Coverage" \
+  -- \
+  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="${TEST_COVERAGE_FORMAT}" \
+  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="${COV_INC}" \
+  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="${COV_EXC}"
 code=$?
 set -e
-rm -f "${runsettings}"
 
 # Preserve the coverage report regardless of the outcome (Codecov needs it on red runs too).
-# RESULTS was wiped above so exactly one fresh report exists; pruning COV_OUT is defence-in-depth
-# so a preserved copy can never be re-selected as stale. An empty match leaves "report" empty,
-# which the threshold guard below turns into a hard failure.
 report="$(find "${RESULTS}" -path "${COV_OUT}" -prune -o -name 'coverage.cobertura.xml' -print | sort | tail -n 1)"
 report_out="${COV_OUT}/coverage.cobertura.xml"
 [[ -n ${report} ]] && cp "${report}" "${report_out}" && echo "📦 Coverage report: ${report_out}"

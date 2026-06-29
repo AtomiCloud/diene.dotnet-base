@@ -27,9 +27,9 @@ Run `pls --list` for the full set.
 
 ## How It Fits Together
 
-- **Tests & coverage** — `pls test:*` calls `scripts/local/dotnet-test.sh`; coverage mode emits a cobertura report under `TestResults/<mode>/coverage/` and enforces the per-mode minimum in `.config/dotnet-base.test.env`. Reports are preserved even on failure so CI can still upload them to Codecov.
+- **Tests & coverage** — `pls test:*` calls `scripts/local/dotnet-test.sh`; coverage mode emits a cobertura report under `TestResults/<mode>/coverage/` and enforces the per-mode minimum in `.config/dotnet-base.test.yaml`. Reports are preserved even on failure so CI can still upload the filtered reports to Codecov.
 - **Dead-code** — `scripts/local/dotnet-dead-code.sh` runs JetBrains InspectCode on net10 via the repo-pinned `jb` tool; the no-test pass surfaces production code reachable only from tests.
-- **CI** — `.github/workflows/ci.yaml` calls reusable pre-commit, test, and build workflows (`⚡reusable-*.yaml`), each running the matching `scripts/ci/*.sh` inside `nix develop .#ci` on NSCloud runners with the shared Nix store and NuGet caches. Test artifacts upload with `if: always()`.
+- **CI** — `.github/workflows/ci.yaml` calls reusable pre-commit, test, and build workflows (`⚡reusable-*.yaml`), each running the matching `scripts/ci/*.sh` inside `nix develop .#ci` on NSCloud runners with the shared Nix store and NuGet caches. The same reusable test workflow is called once for unit coverage and once for integration coverage. Test artifacts upload with `if: always()`.
 - **CI scripts vs Taskfile** — `scripts/ci/*` are CI-only; local tasks use `scripts/local/*` or inline one-liners. Any new gate must be a `scripts/ci/*.sh` that is reproducible locally via `nix develop .#ci -c ./scripts/ci/<script>.sh`.
 
 ## Out of Scope

@@ -1,52 +1,51 @@
 name: ⚡ Reusable Test
 on:
   workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
+      name:
+        required: true
+        type: string
     secrets:
       CODECOV_TOKEN:
         required: false
 jobs:
   test:
-    name: ${{ matrix.name }} Tests
+    name: ${{ inputs.name }} Tests
     runs-on:
       - nscloud-ubuntu-22.04-amd64-4x8-with-cache
       - nscloud-cache-size-50gb
       - nscloud-cache-tag-atomi-nix-store-cache
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - mode: unit
-            name: Unit
-          - mode: int
-            name: Integration
     steps:
       - uses: AtomiCloud/actions.setup-nix@v3
       - uses: AtomiCloud/actions.cache-nuget@v1
-      - if: matrix.mode == 'int'
+      - if: inputs.mode == 'int'
         uses: AtomiCloud/actions.setup-docker@v2
-      - name: Run ${{ matrix.mode }} coverage
-        run: nix develop .#ci -c ./scripts/ci/coverage.sh ${{ matrix.mode }}
-      - name: Upload ${{ matrix.mode }} test results
+      - name: Run ${{ inputs.mode }} coverage
+        run: nix develop .#ci -c ./scripts/ci/coverage.sh ${{ inputs.mode }}
+      - name: Upload ${{ inputs.mode }} test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.mode }}
-          path: TestResults/${{ matrix.mode }}/*.trx
+          name: test-results-${{ inputs.mode }}
+          path: TestResults/${{ inputs.mode }}/*.trx
           if-no-files-found: warn
-      - name: Upload ${{ matrix.mode }} coverage report
+      - name: Upload ${{ inputs.mode }} coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.mode }}
-          path: TestResults/${{ matrix.mode }}/coverage/coverage.cobertura.xml
+          name: coverage-${{ inputs.mode }}
+          path: TestResults/${{ inputs.mode }}/coverage/coverage.cobertura.xml
           if-no-files-found: warn
-      - name: Upload ${{ matrix.mode }} coverage to Codecov
+      - name: Upload ${{ inputs.mode }} coverage to Codecov
         if: always()
         continue-on-error: true
         uses: codecov/codecov-action@v5
         with:
-          files: TestResults/${{ matrix.mode }}/coverage/coverage.cobertura.xml
-          flags: ${{ matrix.mode }}
+          files: TestResults/${{ inputs.mode }}/coverage/coverage.cobertura.xml
+          flags: ${{ inputs.mode }}
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
           disable_search: true

@@ -37,7 +37,7 @@ Once allowed, direnv automatically loads the development environment whenever yo
 
 Run `pls --list` to see every available task.
 
-CI (`.github/workflows/ci.yaml`) wires the same entry points through reusable pre-commit, test, and build workflows, uploads test-result and coverage artifacts, and keeps the Docker image build valid. Publishing, deployment packaging, and production observability are downstream-template concerns and intentionally out of scope here.
+CI (`.github/workflows/ci.yaml`) wires the same entry points through reusable pre-commit, test, and build workflows, uploads test-result and coverage artifacts, and keeps the Docker image build valid. Coverage configuration lives in `.config/dotnet-base.test.yaml`; CI uploads those filtered unit and integration reports to Codecov. Publishing, deployment packaging, and production observability are downstream-template concerns and intentionally out of scope here.
 
 ## Nix Configuration
 

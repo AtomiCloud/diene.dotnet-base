@@ -12,7 +12,7 @@ namespace AtomiCloud.DotnetBase.IntTest.Adapters.Redis;
 /// </summary>
 public class RedisNoteRepository_RoundTrip : IAsyncLifetime
 {
-    private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine")
+    private readonly RedisContainer _redis = new RedisBuilder("redis:8.2.1-alpine")
         .Build();
 
     private IConnectionMultiplexer _connection = null!;
@@ -20,7 +20,11 @@ public class RedisNoteRepository_RoundTrip : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await _redis.StartAsync();
-        _connection = await ConnectionMultiplexer.ConnectAsync(_redis.GetConnectionString());
+        var options = ConfigurationOptions.Parse(_redis.GetConnectionString());
+        options.AbortOnConnectFail = false;
+        options.ConnectRetry = 5;
+
+        _connection = await ConnectionMultiplexer.ConnectAsync(options);
     }
 
     public async ValueTask DisposeAsync()

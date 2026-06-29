@@ -3,26 +3,51 @@ set -euo pipefail
 
 # Load and validate the dotnet test/coverage configuration.
 # Sourced by the local test/coverage helpers: `source scripts/local/dotnet-config.sh`.
-# Keys live in .config/dotnet-base.test.env (override the path with DOTNET_TEST_ENV).
+# Keys live in .config/dotnet-base.test.yaml (override the path with DOTNET_TEST_CONFIG).
 
-DOTNET_TEST_ENV="${DOTNET_TEST_ENV:-.config/dotnet-base.test.env}"
+DOTNET_TEST_CONFIG="${DOTNET_TEST_CONFIG:-.config/dotnet-base.test.yaml}"
 
-[[ -f ${DOTNET_TEST_ENV} ]] || {
-  echo "❌ Test config not found: ${DOTNET_TEST_ENV}"
+[[ -f ${DOTNET_TEST_CONFIG} ]] || {
+  echo "❌ Test config not found: ${DOTNET_TEST_CONFIG}"
+  exit 1
+}
+command -v yq >/dev/null || {
+  echo "❌ yq is required to read ${DOTNET_TEST_CONFIG}"
   exit 1
 }
 
-echo "📝 Loading test config: ${DOTNET_TEST_ENV}"
-set -a
-# shellcheck disable=SC1090
-source "${DOTNET_TEST_ENV}"
-set +a
+yaml_string() {
+  yq -er "${1} // \"\"" "${DOTNET_TEST_CONFIG}"
+}
 
-# Fail fast on a missing key so a misconfigured file never silently weakens a gate.
+yaml_list() {
+  yq -er "${1} // [] | join(\",\")" "${DOTNET_TEST_CONFIG}"
+}
+
+echo "📝 Loading test config: ${DOTNET_TEST_CONFIG}"
+export TEST_COVERAGE_FORMAT
+TEST_COVERAGE_FORMAT="$(yaml_string '.coverage.format')"
+
+export UNIT_PROJECT UNIT_TEST_RESULTS UNIT_COVERAGE_OUTPUT UNIT_COVERAGE_MIN UNIT_COVERAGE_INCLUDE UNIT_COVERAGE_EXCLUDE
+UNIT_PROJECT="$(yaml_string '.coverage.unit.project')"
+UNIT_TEST_RESULTS="$(yaml_string '.coverage.unit.results')"
+UNIT_COVERAGE_OUTPUT="$(yaml_string '.coverage.unit.output')"
+UNIT_COVERAGE_MIN="$(yaml_string '.coverage.unit.minimum')"
+UNIT_COVERAGE_INCLUDE="$(yaml_list '.coverage.unit.include')"
+UNIT_COVERAGE_EXCLUDE="$(yaml_list '.coverage.unit.exclude')"
+
+export INT_PROJECT INT_TEST_RESULTS INT_COVERAGE_OUTPUT INT_COVERAGE_MIN INT_COVERAGE_INCLUDE INT_COVERAGE_EXCLUDE
+INT_PROJECT="$(yaml_string '.coverage.int.project')"
+INT_TEST_RESULTS="$(yaml_string '.coverage.int.results')"
+INT_COVERAGE_OUTPUT="$(yaml_string '.coverage.int.output')"
+INT_COVERAGE_MIN="$(yaml_string '.coverage.int.minimum')"
+INT_COVERAGE_INCLUDE="$(yaml_list '.coverage.int.include')"
+INT_COVERAGE_EXCLUDE="$(yaml_list '.coverage.int.exclude')"
+
 for key in \
   TEST_COVERAGE_FORMAT \
-  UNIT_TEST_RESULTS UNIT_COVERAGE_OUTPUT UNIT_COVERAGE_MIN UNIT_COVERAGE_INCLUDE \
-  INT_TEST_RESULTS INT_COVERAGE_OUTPUT INT_COVERAGE_MIN INT_COVERAGE_INCLUDE; do
+  UNIT_PROJECT UNIT_TEST_RESULTS UNIT_COVERAGE_OUTPUT UNIT_COVERAGE_MIN UNIT_COVERAGE_INCLUDE \
+  INT_PROJECT INT_TEST_RESULTS INT_COVERAGE_OUTPUT INT_COVERAGE_MIN INT_COVERAGE_INCLUDE; do
   [[ -n ${!key:-} ]] || {
     echo "❌ Missing config key: ${key}"
     exit 1
@@ -53,6 +78,13 @@ done
 for key in UNIT_TEST_RESULTS UNIT_COVERAGE_OUTPUT INT_TEST_RESULTS INT_COVERAGE_OUTPUT; do
   [[ ${!key} == TestResults/?* && ${!key} != *..* ]] || {
     echo "❌ ${key}='${!key}' must be a relative path under TestResults/ (no '..')"
+    exit 1
+  }
+done
+
+for key in UNIT_PROJECT INT_PROJECT; do
+  [[ ${!key} == *.csproj && ${!key} != /* && ${!key} != *..* && -f ${!key} ]] || {
+    echo "❌ ${key}='${!key}' must be a relative .csproj path"
     exit 1
   }
 done

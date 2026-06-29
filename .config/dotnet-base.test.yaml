@@ -1,0 +1,21 @@
+coverage:
+  format: cobertura
+  unit:
+    project: UnitTest/UnitTest.csproj
+    results: TestResults/unit
+    output: TestResults/unit/coverage
+    minimum: 100
+    include:
+      - '[Lib]*'
+    exclude:
+      - '[*]*.Program'
+  int:
+    project: IntTest/IntTest.csproj
+    results: TestResults/int
+    output: TestResults/int/coverage
+    minimum: 80
+    include:
+      - '[App]*'
+    exclude:
+      - '[*]*.Program'
+      - '[Lib]*'

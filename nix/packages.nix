@@ -8,7 +8,9 @@ let
   all = rec {
     atomipkgs = (
       with atomi;
-      {
+      rec {
+        dotnetlint = atomi.dotnetlint.override { dotnetPackage = nix-2605.dotnet-sdk_10; };
+
         inherit
           atomiutils
           infralint
@@ -29,10 +31,12 @@ let
           gitlint
           go-task
           infisical
+          jq
           pre-commit
           shellcheck
           skopeo
           treefmt
+          yq-go
           ;
       }
     );

@@ -3,44 +3,18 @@
   packages,
   pre-commit-lib,
 }:
-let
-  # One dotnet-format-style lint hook per project. Per-project `files` scoping keeps incremental
-  # runs fast and pins a failure to a single project; defining the shared command and boilerplate
-  # here means an SDK bump or flag change is a one-line edit instead of four near-identical blocks.
-  dotnetLintHook =
-    { project, files }:
-    {
-      enable = true;
-      description = "Lint the ${project} project with dotnet format style";
-      entry = "${packages.dotnet-sdk_10}/bin/dotnet format style --no-restore --severity info --verify-no-changes -v d ./${project}/${project}.csproj";
-      inherit files;
-      name = "Dotnet Lint (${project})";
-      pass_filenames = false;
-      language = "system";
-    };
-in
 pre-commit-lib.run {
   src = ./.;
 
   hooks = {
-    a-dotnet-lint-app = dotnetLintHook {
-      project = "App";
-      files = "^App/.*\\.cs$";
-    };
-
-    a-dotnet-lint-int-test = dotnetLintHook {
-      project = "IntTest";
-      files = "^IntTest/.*\\.cs$";
-    };
-
-    a-dotnet-lint-lib = dotnetLintHook {
-      project = "Lib";
-      files = "^Lib/.*\\.cs$";
-    };
-
-    a-dotnet-lint-unit-test = dotnetLintHook {
-      project = "UnitTest";
-      files = "^UnitTest/.*\\.cs$";
+    a-dotnet-lint = {
+      enable = true;
+      description = "Run Atomi .NET lint wrapper";
+      entry = "${packages.dotnetlint}/bin/dotnetlint";
+      files = "^.*\\.cs$";
+      name = "Lint .NET";
+      pass_filenames = false;
+      language = "system";
     };
 
     a-enforce-exec = {
