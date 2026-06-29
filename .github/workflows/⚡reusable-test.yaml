@@ -20,6 +20,8 @@ jobs:
       - nscloud-cache-tag-atomi-nix-store-cache
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: AtomiCloud/actions.setup-nix@v3
       - uses: AtomiCloud/actions.cache-nuget@v1
       - if: inputs.mode == 'int'
