@@ -15,6 +15,9 @@ dist
 [Bb]in/
 [Oo]bj/
 [Tt]est[Rr]esults/
+[Cc]overage/
+*.sarif
+dead-code.sln
 
 ### Dev
 .env

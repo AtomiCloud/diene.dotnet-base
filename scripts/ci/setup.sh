@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Repository setup. Pre-commit hooks are installed automatically
-# by the Nix dev shell (shellHook); add project setup steps here.
+# CI setup entry point. Delegates to the local helper so CI and local setup share one source
+# of truth (the Taskfile uses scripts/local/setup.sh directly, never this CI script).
 
-# Restore repo-local .NET tools pinned in .config/dotnet-tools.json.
-dotnet tool restore
+exec ./scripts/local/setup.sh
