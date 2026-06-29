@@ -20,6 +20,7 @@ with packages;
   ];
 
   main = [
+    dotnet-sdk_10
   ];
 
   releaser = [

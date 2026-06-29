@@ -2,6 +2,11 @@
 #### source: 1dcf99b7-867e-40aa-b378-bf6d569d51ea, b304ab1c-173d-4650-a0d9-93d5d67e2d3a
 .kloop/
 
+### dotnet
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+
 ### IDE
 #### source: 1dcf99b7-867e-40aa-b378-bf6d569d51ea, b304ab1c-173d-4650-a0d9-93d5d67e2d3a
 *.swn

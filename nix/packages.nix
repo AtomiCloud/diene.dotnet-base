@@ -24,6 +24,7 @@ let
       {
         inherit
           actionlint
+          dotnet-sdk_10
           git
           gitlint
           go-task

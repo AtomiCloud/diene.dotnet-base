@@ -11,6 +11,11 @@ dist
 ### AtomiCloud
 .kloop/
 
+### dotnet
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+
 ### Dev
 .env
 .envrc
