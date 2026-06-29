@@ -1,9 +1,9 @@
-name: ⚡ Reusable Pre-Commit
+name: ⚡ Reusable Build
 on:
   workflow_call:
 jobs:
-  precommit:
-    name: Pre-Commit
+  build:
+    name: Build Validation
     runs-on:
       - nscloud-ubuntu-22.04-amd64-4x8-with-cache
       - nscloud-cache-size-50gb
@@ -11,5 +11,5 @@ jobs:
     steps:
       - uses: AtomiCloud/actions.setup-nix@v3
       - uses: AtomiCloud/actions.cache-nuget@v1
-      - name: Run pre-commit
-        run: nix develop .#ci -c ./scripts/ci/pre-commit.sh
+      - name: Build solution
+        run: nix develop .#ci -c ./scripts/ci/build.sh

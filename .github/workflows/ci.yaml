@@ -6,6 +6,14 @@ jobs:
     name: Pre-Commit
     uses: ./.github/workflows/⚡reusable-precommit.yaml
     secrets: inherit
+  test:
+    name: Test
+    uses: ./.github/workflows/⚡reusable-test.yaml
+    secrets: inherit
+  build:
+    name: Build
+    uses: ./.github/workflows/⚡reusable-build.yaml
+    secrets: inherit
   docker:
     name: Docker Image
     uses: ./.github/workflows/⚡reusable-docker.yaml
