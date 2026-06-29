@@ -14,7 +14,8 @@ public static class Program
 {
     public static async Task Main()
     {
-        var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION") ?? "localhost:6379";
+        var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION");
+        if (string.IsNullOrWhiteSpace(connectionString)) connectionString = "localhost:6379";
 
         INoteSummariser summariser = new NoteSummariser();
         await using var redis = await ConnectionMultiplexer.ConnectAsync(connectionString);

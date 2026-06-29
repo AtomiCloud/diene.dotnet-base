@@ -19,12 +19,15 @@ jobs:
       - nscloud-cache-size-50gb
       - nscloud-cache-tag-atomi-nix-store-cache
     steps:
+      - uses: actions/checkout@v4
       - uses: AtomiCloud/actions.setup-nix@v3
       - uses: AtomiCloud/actions.cache-nuget@v1
       - if: inputs.mode == 'int'
         uses: AtomiCloud/actions.setup-docker@v2
       - name: Run ${{ inputs.mode }} coverage
-        run: nix develop .#ci -c ./scripts/ci/coverage.sh ${{ inputs.mode }}
+        env:
+          MODE: ${{ inputs.mode }}
+        run: nix develop .#ci -c ./scripts/ci/coverage.sh "$MODE"
       - name: Upload ${{ inputs.mode }} test results
         if: always()
         uses: actions/upload-artifact@v4

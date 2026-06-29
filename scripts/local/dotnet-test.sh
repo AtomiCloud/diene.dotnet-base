@@ -32,7 +32,7 @@ source "$(dirname "$0")/dotnet-config.sh"
 # Resolve the per-kind config (unit -> UNIT_*, int -> INT_*).
 case "${KIND}" in
 unit)
-  PROJECT="UnitTest/UnitTest.csproj"
+  PROJECT="${UNIT_PROJECT}"
   RESULTS="${UNIT_TEST_RESULTS}"
   COV_OUT="${UNIT_COVERAGE_OUTPUT}"
   COV_MIN="${UNIT_COVERAGE_MIN}"
@@ -40,7 +40,7 @@ unit)
   COV_EXC="${UNIT_COVERAGE_EXCLUDE:-}"
   ;;
 int)
-  PROJECT="IntTest/IntTest.csproj"
+  PROJECT="${INT_PROJECT}"
   RESULTS="${INT_TEST_RESULTS}"
   COV_OUT="${INT_COVERAGE_OUTPUT}"
   COV_MIN="${INT_COVERAGE_MIN}"

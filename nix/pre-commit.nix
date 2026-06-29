@@ -11,7 +11,7 @@ pre-commit-lib.run {
       enable = true;
       description = "Run Atomi .NET lint wrapper";
       entry = "${packages.dotnetlint}/bin/dotnetlint";
-      files = "^.*\\.cs$";
+      files = "^(.*\\.cs|.*\\.csproj|Directory\\.Build\\.props|Directory\\.Packages\\.props|dotnet-base\\.slnx|global\\.json)$";
       name = "Lint .NET";
       pass_filenames = false;
       language = "system";

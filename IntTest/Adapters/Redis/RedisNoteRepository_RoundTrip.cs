@@ -43,8 +43,8 @@ public class RedisNoteRepository_RoundTrip : IAsyncLifetime
         var input = new NoteRecord { Title = "Round trip", Body = "stored in Redis" };
 
         // Act
-        var saved = await subject.Save(input);
-        var actual = await subject.Find(saved.Id);
+        var saved = await subject.Save(input, TestContext.Current.CancellationToken);
+        var actual = await subject.Find(saved.Id, TestContext.Current.CancellationToken);
 
         // Assert
         actual.Should().NotBeNull();
@@ -59,9 +59,23 @@ public class RedisNoteRepository_RoundTrip : IAsyncLifetime
         var subject = new RedisNoteRepository(_connection);
 
         // Act
-        var actual = await subject.Find("missing");
+        var actual = await subject.Find("missing", TestContext.Current.CancellationToken);
 
         // Assert
         actual.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task It_should_reject_blank_note_ids()
+    {
+        // Arrange
+        var subject = new RedisNoteRepository(_connection);
+
+        // Act
+        var act = async () => await subject.Find(" ", TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithParameterName("id");
     }
 }

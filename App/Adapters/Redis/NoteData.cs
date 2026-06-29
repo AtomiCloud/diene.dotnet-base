@@ -2,7 +2,8 @@ namespace AtomiCloud.DotnetBase.App.Adapters.Redis;
 
 /// <summary>
 /// Storage model for a note as persisted in Redis. Flat by design: the data layer
-/// owns its own shape, kept separate from the domain <see cref="Lib.Note.NotePrincipal" />
+/// owns its own shape, kept separate from the domain
+/// <see cref="AtomiCloud.DotnetBase.Lib.Note.NotePrincipal" />
 /// so a storage-format change never reaches the domain.
 /// </summary>
 internal sealed record NoteData

@@ -7,8 +7,8 @@ namespace AtomiCloud.DotnetBase.Lib.Note;
 public interface INoteRepository
 {
     /// <summary>Persist a note and return it with its newly assigned identity.</summary>
-    Task<NotePrincipal> Save(NoteRecord record);
+    Task<NotePrincipal> Save(NoteRecord record, CancellationToken cancellationToken = default);
 
     /// <summary>Look up a note by id, or <c>null</c> when it does not exist.</summary>
-    Task<NotePrincipal?> Find(string id);
+    Task<NotePrincipal?> Find(string id, CancellationToken cancellationToken = default);
 }
