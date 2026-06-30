@@ -10,6 +10,7 @@ with packages;
 
   lint = [
     actionlint
+    dn-inspect
     dotnetlint
     gitlint
     go-task

@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# JetBrains InspectCode dead-code analysis, run on the project SDK (net10).
-# Two passes:
-#   normal     — all projects (tests included)
-#   --no-test  — production projects only, so code used ONLY by tests surfaces as dead
-# Findings are filtered to the dead-code rule family (unused / never-used / never-instantiated /
-# not-accessed symbols); override the regex with DEAD_CODE_RULE_FILTER. Style and naming rules
-# are out of scope here — those belong to `pls lint`.
+# JetBrains InspectCode dead-code analysis via dn-inspect, run on the project SDK (net10).
 # Usage: dotnet-dead-code.sh [--no-test]
 
 MODE="${1:-normal}"
 RULE_FILTER="${DEAD_CODE_RULE_FILTER:-Unused|NeverInstantiated|NeverUsed|NotAccessed|NeverSubscribed|UnassignedField}"
 
-# Reject unknown modes instead of silently inspecting all projects — a typo must not quietly
-# skip the production-only (no-test) pass.
 case "${MODE}" in
 normal | --no-test) ;;
 *)
@@ -23,6 +15,7 @@ normal | --no-test) ;;
   ;;
 esac
 
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 LABEL="$([[ ${MODE} == "--no-test" ]] && echo "no-test (production only)" || echo "normal (all projects)")"
 echo "🔧 Restoring .NET tools (jb)..."
 dotnet tool restore >/dev/null
@@ -33,38 +26,18 @@ trap 'rm -rf "${WORKDIR}"' EXIT
 SLN="${DN_INSPECT_TEMP_SLN:-${WORKDIR}/dead-code.sln}"
 SLN_DIR="$(dirname "${SLN}")"
 SLN_NAME="$(basename "${SLN}" .sln)"
-REPORT="${WORKDIR}/inspect.sarif"
 
 echo "🧩 Building inspection solution: ${LABEL}"
 mkdir -p "${SLN_DIR}"
 rm -f "${SLN}"
 dotnet new sln --format sln --output "${SLN_DIR}" --name "${SLN_NAME}" >/dev/null
 
-dotnet sln "${SLN}" add App/App.csproj Lib/Lib.csproj >/dev/null
-[[ ${MODE} == "--no-test" ]] || dotnet sln "${SLN}" add UnitTest/UnitTest.csproj IntTest/IntTest.csproj >/dev/null
+projects=(App/App.csproj Lib/Lib.csproj)
+[[ ${MODE} == "--no-test" ]] || projects+=(UnitTest/UnitTest.csproj IntTest/IntTest.csproj)
 
-echo "🔍 Running inspectcode..."
-dotnet jb inspectcode "${SLN}" --format=Sarif --output="${REPORT}" --properties:RunAnalyzers=false --verbosity=OFF
+for project in "${projects[@]}"; do
+  dotnet sln "${SLN}" add "${ROOT}/${project}" >/dev/null
+done
 
-[[ -s ${REPORT} ]] || {
-  echo "❌ inspectcode produced no SARIF report"
-  exit 1
-}
-jq -e . "${REPORT}" >/dev/null || {
-  echo "❌ inspectcode SARIF report is not valid JSON"
-  exit 1
-}
-
-count="$(jq --arg f "${RULE_FILTER}" '[.runs[].results[] | select(.ruleId | test($f; "i"))] | length' "${REPORT}")"
-
-[[ ${count} -eq 0 ]] && {
-  echo "✅ No dead-code findings (${LABEL})"
-  exit 0
-}
-
-echo "📊 ${count} dead-code finding(s) (${LABEL}):"
-jq -r --arg f "${RULE_FILTER}" '.runs[].results[]
-  | select(.ruleId | test($f; "i"))
-  | "  \(.locations[0].physicalLocation.artifactLocation.uri // "?"):\(.locations[0].physicalLocation.region.startLine // "?") [\(.ruleId)] \(.message.text)"' \
-  "${REPORT}"
-exit 1
+echo "🔍 Running dn-inspect..."
+dn-inspect "${SLN}" --filter "${RULE_FILTER}"

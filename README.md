@@ -25,11 +25,11 @@ Once allowed, direnv automatically loads the development environment whenever yo
 
 [`pls`](docs/developer/standard/taskfile.md) (Taskfile) is the entry point for every local task — the same gates CI runs (CI invokes the matching `scripts/ci/*` scripts under `nix develop .#ci`):
 
-| Command                  | What it does                                                          |
-| ------------------------ | -------------------------------------------------------------------- |
-| `pls setup`              | Set up the repo (Nix env + secrets)                                  |
-| `pls build`              | Build the .NET solution (Release)                                    |
-| `pls lint`               | Run all pre-commit hooks across the code-base                        |
+| Command                  | What it does                                                        |
+| ------------------------ | ------------------------------------------------------------------- |
+| `pls setup`              | Set up the repo (Nix env + secrets)                                 |
+| `pls build`              | Build the .NET solution (Release)                                   |
+| `pls lint`               | Run all pre-commit hooks across the code-base                       |
 | `pls test:unit`          | Run unit tests (`:int` for integration; `:dev` variants watch)      |
 | `pls test:unit:coverage` | Run tests with coverage and enforce the threshold (`:int:coverage`) |
 | `pls dead-code`          | Inspect for dead code (`:no-test` treats test-only code as dead)    |
