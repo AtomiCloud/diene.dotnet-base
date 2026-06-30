@@ -27,7 +27,8 @@ normal | --watch | --coverage) ;;
 esac
 
 # Read the per-kind config straight from the YAML (unit and int share the same shape).
-CONFIG="${DOTNET_TEST_CONFIG:-.config/dotnet-base.test.yaml}"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+CONFIG="${DOTNET_TEST_CONFIG:-${ROOT}/.config/dotnet-base.test.yaml}"
 [[ -f ${CONFIG} ]] || {
   echo "❌ Test config not found: ${CONFIG}"
   exit 1
@@ -36,27 +37,27 @@ command -v yq >/dev/null || {
   echo "❌ yq is required to read ${CONFIG}"
   exit 1
 }
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 yaml() { yq -er "${1} // \"\"" "${CONFIG}"; }
 yaml_list() { yq -er "${1} // [] | join(\"%2c\")" "${CONFIG}"; }
 
-PROJECT="$(yaml ".coverage.${KIND}.project")"
+PROJECT_REL="$(yaml ".coverage.${KIND}.project")"
 COV_MIN="$(yaml ".coverage.${KIND}.minimum")"
 COV_INC="$(yaml_list ".coverage.${KIND}.include")"
 COV_EXC="$(yaml_list ".coverage.${KIND}.exclude")"
 RESULTS="${ROOT}/TestResults/${KIND}"
 COV_OUT="${RESULTS}/coverage"
+PROJECT="${ROOT}/${PROJECT_REL}"
 
 # Fail loudly on missing required config rather than running with empty paths/projects.
-for key in PROJECT COV_MIN COV_INC; do
+for key in PROJECT_REL COV_MIN COV_INC; do
   [[ -n ${!key} ]] || {
     echo "❌ Missing .coverage.${KIND} config for ${key} in ${CONFIG}"
     exit 1
   }
 done
 
-[[ ${PROJECT} == *.csproj && ${PROJECT} != /* && ${PROJECT} != *..* && -f ${PROJECT} ]] || {
-  echo "❌ ${KIND} project '${PROJECT}' must be a relative .csproj path"
+[[ ${PROJECT_REL} == *.csproj && ${PROJECT_REL} != /* && ${PROJECT_REL} != *..* && -f ${PROJECT} ]] || {
+  echo "❌ ${KIND} project '${PROJECT_REL}' must be a relative .csproj path"
   exit 1
 }
 
