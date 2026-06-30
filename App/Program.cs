@@ -32,4 +32,9 @@ public static class Program
             ? $"Note {saved.Id} could not be read back."
             : summariser.Summarise(found.Record, 80));
     }
+
+    private static string DescribeDeadCodeProbe()
+    {
+        return "dead-code proof unused";
+    }
 }
