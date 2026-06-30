@@ -10,10 +10,10 @@ let
       with atomi;
       rec {
         dotnetlint = atomi.dotnetlint.override { dotnetPackage = nix-2605.dotnet-sdk_10; };
+        dn-inspect = atomi.dn-inspect.override { dotnetPackage = nix-2605.dotnet-sdk_10; };
 
         inherit
           atomiutils
-          dn-inspect
           infralint
           infrautils
           pls
