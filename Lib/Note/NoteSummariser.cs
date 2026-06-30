@@ -18,6 +18,14 @@ public class NoteSummariser : INoteSummariser
     private const string Ellipsis = "…";
     private const string Separator = " — ";
 
+    public string UnitCoverageGateProbe(string value)
+    {
+        if (value.Length == 0)
+            return "empty";
+
+        return value.ToUpperInvariant();
+    }
+
     public string Summarise(NoteRecord record, int maxLength)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxLength);
