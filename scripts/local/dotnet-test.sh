@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Run unit or integration tests on the project SDK.
 # Modes: normal (default), --watch (dev/watch), --coverage (full coverage + threshold).
-# Per-kind config (project, results, coverage include/exclude, threshold) lives in
-# .config/dotnet-base.test.yaml (override the path with DOTNET_TEST_CONFIG).
+# Per-kind config (project, coverage include/exclude, threshold) lives in
+# .config/dotnet-base.test.yaml (override with DOTNET_TEST_CONFIG).
 # Coverage and test-result artifacts are preserved even when tests fail, so a red run
 # still feeds Codecov. Usage: dotnet-test.sh <unit|int> [--watch|--coverage]
 
@@ -36,41 +36,29 @@ command -v yq >/dev/null || {
   echo "❌ yq is required to read ${CONFIG}"
   exit 1
 }
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 yaml() { yq -er "${1} // \"\"" "${CONFIG}"; }
-yaml_list() { yq -er "${1} // [] | join(\",\")" "${CONFIG}"; }
+yaml_list() { yq -er "${1} // [] | join(\"%2c\")" "${CONFIG}"; }
 
-COV_FORMAT="$(yaml '.coverage.format')"
 PROJECT="$(yaml ".coverage.${KIND}.project")"
-RESULTS="$(yaml ".coverage.${KIND}.results")"
-COV_OUT="$(yaml ".coverage.${KIND}.output")"
 COV_MIN="$(yaml ".coverage.${KIND}.minimum")"
 COV_INC="$(yaml_list ".coverage.${KIND}.include")"
 COV_EXC="$(yaml_list ".coverage.${KIND}.exclude")"
+RESULTS="${ROOT}/TestResults/${KIND}"
+COV_OUT="${RESULTS}/coverage"
 
 # Fail loudly on missing required config rather than running with empty paths/projects.
-for key in PROJECT RESULTS COV_OUT COV_MIN; do
+for key in PROJECT COV_MIN COV_INC; do
   [[ -n ${!key} ]] || {
     echo "❌ Missing .coverage.${KIND} config for ${key} in ${CONFIG}"
     exit 1
   }
 done
 
-[[ ${COV_FORMAT} == cobertura ]] || {
-  echo "❌ Coverage format '${COV_FORMAT}' is unsupported (only 'cobertura')"
-  exit 1
-}
-
 [[ ${PROJECT} == *.csproj && ${PROJECT} != /* && ${PROJECT} != *..* && -f ${PROJECT} ]] || {
   echo "❌ ${KIND} project '${PROJECT}' must be a relative .csproj path"
   exit 1
 }
-
-for path in "${RESULTS}" "${COV_OUT}"; do
-  [[ ${path} == TestResults/?* && ${path} != *..* ]] || {
-    echo "❌ ${KIND} artifact path '${path}' must be under TestResults/ with no '..'"
-    exit 1
-  }
-done
 
 # Validate the threshold so the awk numeric compare can't silently degrade to a string
 # compare (e.g. '100x' would always pass).
@@ -97,51 +85,41 @@ done
   exit "${code}"
 }
 
-# Coverage mode: collect coverage, preserve the report, then enforce the threshold.
+# Coverage mode: coverlet.msbuild writes directly to the Codecov path and enforces threshold.
 echo "🧪 Running ${KIND} tests with coverage (min ${COV_MIN}%)..."
 rm -rf "${RESULTS}"
-mkdir -p "${COV_OUT}"
+mkdir -p "${RESULTS}" "${COV_OUT}"
 
 set +e
 dotnet test "${PROJECT}" -c Release \
   --logger "trx;LogFileName=${KIND}.trx" \
   --results-directory "${RESULTS}" \
-  --collect:"XPlat Code Coverage" \
-  -- \
-  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="${COV_FORMAT}" \
-  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="${COV_INC}" \
-  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="${COV_EXC}"
+  /p:CollectCoverage=true \
+  /p:CoverletOutput="${COV_OUT}/" \
+  /p:CoverletOutputFormat=cobertura \
+  /p:Threshold="${COV_MIN}" \
+  /p:ThresholdType=line \
+  /p:Include="${COV_INC}" \
+  /p:Exclude="${COV_EXC}"
 code=$?
 set -e
 
-# Preserve the coverage report regardless of the outcome (Codecov needs it on red runs too).
-report="$(find "${RESULTS}" -path "${COV_OUT}" -prune -o -name 'coverage.cobertura.xml' -print | sort | tail -n 1)"
-report_out="${COV_OUT}/coverage.cobertura.xml"
-[[ -n ${report} ]] && cp "${report}" "${report_out}" && echo "📦 Coverage report: ${report_out}"
+report="${COV_OUT}/coverage.cobertura.xml"
+[[ -f ${report} ]] && echo "📦 Coverage report: ${report}"
 
-# Fail (after preserving the report) when the tests themselves failed.
 [[ ${code} -eq 0 ]] || {
-  echo "❌ ${KIND} tests failed (exit ${code}); coverage report preserved"
+  echo "❌ ${KIND} tests or coverage failed (exit ${code})"
   exit "${code}"
 }
 
-# Enforce the configured line-coverage threshold.
-[[ -n ${report} ]] || {
+[[ -f ${report} ]] || {
   echo "❌ No coverage report produced"
   exit 1
 }
-# Guard against a hollow gate: an empty *_COVERAGE_INCLUDE makes coverlet emit line-rate="1"
-# with lines-valid="0", which would pass at a vacuous 100% measuring nothing.
-valid="$(grep -m1 -oE 'lines-valid="[0-9]+"' "${report_out}" | grep -oE '[0-9]+')"
+
+valid="$(grep -m1 -oE 'lines-valid="[0-9]+"' "${report}" | grep -oE '[0-9]+')"
 [[ ${valid:-0} -gt 0 ]] || {
   echo "❌ Coverage measured 0 lines — check the ${KIND} coverage Include matches a built assembly"
   exit 1
 }
-rate="$(grep -m1 -oE 'line-rate="[0-9.]+"' "${report_out}" | grep -oE '[0-9.]+')"
-pct="$(awk -v r="${rate}" 'BEGIN { printf "%.2f", r * 100 }')"
-echo "📊 ${KIND} line coverage: ${pct}% (min ${COV_MIN}%)"
-awk -v p="${pct}" -v m="${COV_MIN}" 'BEGIN { exit !(p >= m) }' || {
-  echo "❌ Coverage ${pct}% is below the ${COV_MIN}% minimum"
-  exit 1
-}
-echo "✅ ${KIND} coverage ${pct}% meets the ${COV_MIN}% minimum"
+echo "✅ ${KIND} coverage meets the ${COV_MIN}% minimum"

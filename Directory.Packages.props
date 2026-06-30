@@ -12,7 +12,7 @@
 
   <!-- Test stack: xUnit + FluentAssertions + Testcontainers. -->
   <ItemGroup>
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
     <!-- Pinned to 7.x: v8 switched to a paid commercial license; 7.x stays Apache-2.0. -->
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
     <!-- 2.4.1 is the last VSTest-only release; 3.x requires Microsoft.Testing.Platform v2,
