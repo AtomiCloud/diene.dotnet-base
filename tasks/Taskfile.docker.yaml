@@ -6,6 +6,10 @@ tasks:
     desc: 'Build the image locally (optional tag suffix via --, e.g. -- 1 -> :local-1)'
     cmds:
       - docker build -f infra/Dockerfile -t {{.IMAGE}}{{if .CLI_ARGS}}-{{.CLI_ARGS}}{{end}} .
+  prep:
+    desc: 'Validate the base Docker build context (build smoke, no push)'
+    cmds:
+      - docker build -f infra/Dockerfile -t {{.IMAGE}}-prep .
   run:
     desc: 'Run the built image (optional tag suffix via --)'
     cmds:

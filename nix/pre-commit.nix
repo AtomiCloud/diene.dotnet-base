@@ -4,9 +4,19 @@
   pre-commit-lib,
 }:
 pre-commit-lib.run {
-  src = ./.;
+  src = ../.;
 
   hooks = {
+    a-dotnet-lint = {
+      enable = true;
+      description = "Run Atomi .NET lint wrapper";
+      entry = "${packages.dotnetlint}/bin/dotnetlint";
+      files = "^(.*\\.cs|.*\\.csproj|Directory\\.Build\\.props|Directory\\.Packages\\.props|dotnet-base\\.slnx|global\\.json)$";
+      name = "Lint .NET";
+      pass_filenames = false;
+      language = "system";
+    };
+
     a-enforce-exec = {
       enable = true;
       entry = "${packages.atomiutils}/bin/chmod +x";

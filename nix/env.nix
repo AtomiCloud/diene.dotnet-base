@@ -10,6 +10,8 @@ with packages;
 
   lint = [
     actionlint
+    dn-inspect
+    dotnetlint
     gitlint
     go-task
     infralint
@@ -20,6 +22,7 @@ with packages;
   ];
 
   main = [
+    dotnet-sdk_10
   ];
 
   releaser = [
