@@ -8,6 +8,14 @@ namespace AtomiCloud.DotnetBase.App.Adapters.Redis;
 /// </summary>
 internal static class NoteDataMapper
 {
+    public static string IntegrationCoverageGateProbe(NoteData data)
+    {
+        if (string.IsNullOrWhiteSpace(data.Body))
+            return data.Title;
+
+        return data.Body;
+    }
+
     public static NoteData ToData(this NotePrincipal principal) => new()
     {
         Id = principal.Id,
