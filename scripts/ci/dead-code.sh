@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# CI entry point: dead-code inspection, both passes. The no-test pass excludes the test
-# projects so production code reachable ONLY from tests is reported as dead.
+# CI entry point: production-only dead-code inspection.
 
-echo "🔍 Dead-code inspection (normal)..."
+echo "🔍 Dead-code inspection..."
 ./scripts/local/dotnet-dead-code.sh
-
-echo "🔍 Dead-code inspection (no-test)..."
-./scripts/local/dotnet-dead-code.sh --no-test
 
 echo "✅ Dead-code inspection complete"

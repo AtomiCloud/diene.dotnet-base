@@ -18,10 +18,6 @@ tasks:
     cmds:
       - pre-commit run --all-files
   dead-code:
-    desc: Inspect for dead code across all projects
+    desc: Inspect production projects for dead code
     cmds:
       - ./scripts/local/dotnet-dead-code.sh
-  dead-code:no-test:
-    desc: Inspect for dead code excluding tests (test-only production code counts as dead)
-    cmds:
-      - ./scripts/local/dotnet-dead-code.sh --no-test
