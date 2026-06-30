@@ -14,12 +14,10 @@ with packages;
     gitlint
     go-task
     infralint
-    jq
     pre-commit
     sg
     shellcheck
     treefmt
-    yq-go
   ];
 
   main = [

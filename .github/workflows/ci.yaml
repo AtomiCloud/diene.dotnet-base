@@ -1,8 +1,6 @@
 name: CI
 on:
   push: null
-permissions:
-  contents: read
 jobs:
   precommit:
     name: Pre-Commit
@@ -11,16 +9,14 @@ jobs:
   unit:
     name: Unit Tests
     uses: ./.github/workflows/⚡reusable-test.yaml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    secrets: inherit
     with:
       mode: unit
       name: Unit
   int:
     name: Integration Tests
     uses: ./.github/workflows/⚡reusable-test.yaml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    secrets: inherit
     with:
       mode: int
       name: Integration
@@ -29,10 +25,6 @@ jobs:
     uses: ./.github/workflows/⚡reusable-build.yaml
   docker:
     name: Docker Image
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
     uses: ./.github/workflows/⚡reusable-docker.yaml
     secrets: inherit
     with:

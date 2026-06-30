@@ -31,12 +31,10 @@ let
           gitlint
           go-task
           infisical
-          jq
           pre-commit
           shellcheck
           skopeo
           treefmt
-          yq-go
           ;
       }
     );

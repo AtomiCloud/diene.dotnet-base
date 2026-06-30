@@ -3,6 +3,8 @@ set -euo pipefail
 
 # Run unit or integration tests on the project SDK.
 # Modes: normal (default), --watch (dev/watch), --coverage (full coverage + threshold).
+# Per-kind config (project, results, coverage include/exclude, threshold) lives in
+# .config/dotnet-base.test.yaml (override the path with DOTNET_TEST_CONFIG).
 # Coverage and test-result artifacts are preserved even when tests fail, so a red run
 # still feeds Codecov. Usage: dotnet-test.sh <unit|int> [--watch|--coverage]
 
@@ -24,30 +26,58 @@ normal | --watch | --coverage) ;;
   ;;
 esac
 
-# The path is dynamic ($0-relative); the source= hint documents the target, and SC1091 is
-# disabled because the pre-commit shellcheck hook runs without -x and cannot follow it.
-# shellcheck source=scripts/local/dotnet-config.sh disable=SC1091
-source "$(dirname "$0")/dotnet-config.sh"
+# Read the per-kind config straight from the YAML (unit and int share the same shape).
+CONFIG="${DOTNET_TEST_CONFIG:-.config/dotnet-base.test.yaml}"
+[[ -f ${CONFIG} ]] || {
+  echo "❌ Test config not found: ${CONFIG}"
+  exit 1
+}
+command -v yq >/dev/null || {
+  echo "❌ yq is required to read ${CONFIG}"
+  exit 1
+}
+yaml() { yq -er "${1} // \"\"" "${CONFIG}"; }
+yaml_list() { yq -er "${1} // [] | join(\",\")" "${CONFIG}"; }
 
-# Resolve the per-kind config (unit -> UNIT_*, int -> INT_*).
-case "${KIND}" in
-unit)
-  PROJECT="${UNIT_PROJECT}"
-  RESULTS="${UNIT_TEST_RESULTS}"
-  COV_OUT="${UNIT_COVERAGE_OUTPUT}"
-  COV_MIN="${UNIT_COVERAGE_MIN}"
-  COV_INC="${UNIT_COVERAGE_INCLUDE}"
-  COV_EXC="${UNIT_COVERAGE_EXCLUDE:-}"
-  ;;
-int)
-  PROJECT="${INT_PROJECT}"
-  RESULTS="${INT_TEST_RESULTS}"
-  COV_OUT="${INT_COVERAGE_OUTPUT}"
-  COV_MIN="${INT_COVERAGE_MIN}"
-  COV_INC="${INT_COVERAGE_INCLUDE}"
-  COV_EXC="${INT_COVERAGE_EXCLUDE:-}"
-  ;;
-esac
+COV_FORMAT="$(yaml '.coverage.format')"
+PROJECT="$(yaml ".coverage.${KIND}.project")"
+RESULTS="$(yaml ".coverage.${KIND}.results")"
+COV_OUT="$(yaml ".coverage.${KIND}.output")"
+COV_MIN="$(yaml ".coverage.${KIND}.minimum")"
+COV_INC="$(yaml_list ".coverage.${KIND}.include")"
+COV_EXC="$(yaml_list ".coverage.${KIND}.exclude")"
+
+# Fail loudly on missing required config rather than running with empty paths/projects.
+for key in PROJECT RESULTS COV_OUT COV_MIN; do
+  [[ -n ${!key} ]] || {
+    echo "❌ Missing .coverage.${KIND} config for ${key} in ${CONFIG}"
+    exit 1
+  }
+done
+
+[[ ${COV_FORMAT} == cobertura ]] || {
+  echo "❌ Coverage format '${COV_FORMAT}' is unsupported (only 'cobertura')"
+  exit 1
+}
+
+[[ ${PROJECT} == *.csproj && ${PROJECT} != /* && ${PROJECT} != *..* && -f ${PROJECT} ]] || {
+  echo "❌ ${KIND} project '${PROJECT}' must be a relative .csproj path"
+  exit 1
+}
+
+for path in "${RESULTS}" "${COV_OUT}"; do
+  [[ ${path} == TestResults/?* && ${path} != *..* ]] || {
+    echo "❌ ${KIND} artifact path '${path}' must be under TestResults/ with no '..'"
+    exit 1
+  }
+done
+
+# Validate the threshold so the awk numeric compare can't silently degrade to a string
+# compare (e.g. '100x' would always pass).
+[[ ${COV_MIN} =~ ^[0-9]+$ && ${COV_MIN} -ge 0 && ${COV_MIN} -le 100 ]] || {
+  echo "❌ ${KIND} coverage minimum '${COV_MIN}' must be an integer in [0,100]"
+  exit 1
+}
 
 # Dev/watch mode hands off to `dotnet watch test` and never returns.
 [[ ${MODE} == "--watch" ]] && {
@@ -78,7 +108,7 @@ dotnet test "${PROJECT}" -c Release \
   --results-directory "${RESULTS}" \
   --collect:"XPlat Code Coverage" \
   -- \
-  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="${TEST_COVERAGE_FORMAT}" \
+  DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="${COV_FORMAT}" \
   DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="${COV_INC}" \
   DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="${COV_EXC}"
 code=$?
