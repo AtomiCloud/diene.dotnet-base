@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# CI entry point: production-only dead-code inspection.
+# CI entry point: all-project and production-only dead-code inspection.
 
 echo "🔍 Dead-code inspection..."
 ./scripts/local/dotnet-dead-code.sh

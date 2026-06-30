@@ -32,7 +32,7 @@ Once allowed, direnv automatically loads the development environment whenever yo
 | `pls lint`               | Run all pre-commit hooks across the code-base                       |
 | `pls test:unit`          | Run unit tests (`:int` for integration; `:dev` variants watch)      |
 | `pls test:unit:coverage` | Run tests with coverage and enforce the threshold (`:int:coverage`) |
-| `pls dead-code`          | Inspect production projects for dead code                           |
+| `pls dead-code`          | Inspect for dead code                                               |
 | `pls docker:prep`        | Validate the base Docker build context (build smoke, no push)       |
 
 Run `pls --list` to see every available task.
