@@ -16,28 +16,16 @@ normal | --no-test) ;;
 esac
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-LABEL="$([[ ${MODE} == "--no-test" ]] && echo "no-test (production only)" || echo "normal (all projects)")"
 echo "🔧 Restoring .NET tools (jb)..."
 dotnet tool restore >/dev/null
 
-WORKDIR="$(mktemp -d "${DEAD_CODE_TEMP_DIR:-${TMPDIR:-/tmp}}/dn-dead-code.XXXXXX")"
-trap 'rm -rf "${WORKDIR}"' EXIT
+if [[ ${MODE} == "--no-test" ]]; then
+  echo "🔍 Running dn-inspect: no-test (production only)"
+  dn-inspect \
+    --projects "${ROOT}/App/App.csproj" "${ROOT}/Lib/Lib.csproj" \
+    --filter "${RULE_FILTER}"
+  exit
+fi
 
-SLN="${DN_INSPECT_TEMP_SLN:-${WORKDIR}/dead-code.sln}"
-SLN_DIR="$(dirname "${SLN}")"
-SLN_NAME="$(basename "${SLN}" .sln)"
-
-echo "🧩 Building inspection solution: ${LABEL}"
-mkdir -p "${SLN_DIR}"
-rm -f "${SLN}"
-dotnet new sln --format sln --output "${SLN_DIR}" --name "${SLN_NAME}" >/dev/null
-
-projects=(App/App.csproj Lib/Lib.csproj)
-[[ ${MODE} == "--no-test" ]] || projects+=(UnitTest/UnitTest.csproj IntTest/IntTest.csproj)
-
-for project in "${projects[@]}"; do
-  dotnet sln "${SLN}" add "${ROOT}/${project}" >/dev/null
-done
-
-echo "🔍 Running dn-inspect..."
-dn-inspect "${SLN}" --filter "${RULE_FILTER}"
+echo "🔍 Running dn-inspect: normal (all projects)"
+dn-inspect "${ROOT}/dotnet-base.slnx" --filter "${RULE_FILTER}"
