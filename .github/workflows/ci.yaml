@@ -25,6 +25,9 @@ jobs:
     uses: ./.github/workflows/⚡reusable-build.yaml
   docker:
     name: Docker Image
+    permissions:
+      id-token: write
+      packages: write
     uses: ./.github/workflows/⚡reusable-docker.yaml
     secrets: inherit
     with:
