@@ -17,6 +17,8 @@ public static class Program
         var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION");
         if (string.IsNullOrWhiteSpace(connectionString)) connectionString = "localhost:6379";
 
+        _ = DeadCodeProof.Describe();
+
         INoteSummariser summariser = new NoteSummariser();
         await using var redis = await ConnectionMultiplexer.ConnectAsync(connectionString);
         INoteRepository notes = new RedisNoteRepository(redis);
