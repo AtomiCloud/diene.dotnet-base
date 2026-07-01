@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/AtomiCloud/diene.dotnet-base/compare/v1.0.0...v1.0.1) (2026-07-01)
+
+
+### 🐛 Bug Fixes 🐛
+
+* grant cd docker job oidc and package permissions ([cc74219](https://github.com/AtomiCloud/diene.dotnet-base/commit/cc742199ab29a48092429c2986b994f8e3c5b8d7))
+
 ## 1.0.0 (2026-07-01)
 
 
